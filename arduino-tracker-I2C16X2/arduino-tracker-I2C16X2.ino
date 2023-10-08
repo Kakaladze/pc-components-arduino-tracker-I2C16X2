@@ -13,6 +13,7 @@ uint8_t lastGpuTemp = 0;
 uint16_t lastRamMax = 0;
 uint16_t lastRamUsage = 0;
 uint16_t interval = 2500;
+uint16_t refreshInterval = 500;
 
 void displayInitScreen() {
   lcd.clear();
@@ -88,23 +89,33 @@ void displayRamData(uint16_t max, uint16_t usage) {
 }
 
 void handleDisplayData() {
-  static unsigned long lastChangeTime = millis();
+  static unsigned long lastChangeScreenChangeTime = millis();
+  static unsigned long lastRefreshTime = millis();
   unsigned long currentTime = millis();
-  if (connectionInitialized && currentTime - lastChangeTime >= interval) {
-    static uint8_t activeScreen = 0;
+  static uint8_t activeScreen = 0;
+  if (connectionInitialized && currentTime - lastChangeScreenChangeTime >= refreshInterval) {
     if (activeScreen == 0) {
       displayData("CPU", lastCpuUsage, lastCpuTemp);
-      activeScreen = 1;
+      if (currentTime - lastChangeScreenChangeTime >= interval) {
+        activeScreen = 1;
+        lastChangeScreenChangeTime = currentTime;
+      }
     } 
     else if (activeScreen == 1) {
       displayData("GPU", lastGpuUsage, lastGpuTemp);
-      activeScreen = 2;
+      if (currentTime - lastChangeScreenChangeTime >= interval) {
+        activeScreen = 2;
+        lastChangeScreenChangeTime = currentTime;
+      }
     }
     else {
       displayRamData(lastRamMax, lastRamUsage);
-      activeScreen = 0;
+      if (currentTime - lastChangeScreenChangeTime >= interval) {
+        activeScreen = 0;
+        lastChangeScreenChangeTime = currentTime;
+      }
     }
-    lastChangeTime = currentTime;
+    lastRefreshTime = currentTime;
   }
 }
 
